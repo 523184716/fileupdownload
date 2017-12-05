@@ -1,0 +1,204 @@
+#!/usr/bin/env python
+#coding:utf-8
+
+import  wx
+import  socket
+import  time
+import os
+import json
+import  chardet
+from updown_load.AuthRecord.TableCreat import  *
+from  MkSecret import mkaesecret
+import  sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+userdict = {}
+class FileTran(wx.Frame):
+    def __init__(self,*args,**kwargs):
+        super(FileTran,self).__init__(*args,**kwargs)
+        self.panel = wx.Panel(self)
+        self.filetrandict = {}
+        self.register = wx.Button(self.panel,label="注册")
+        self.login = wx.Button(self.panel,label="登录")
+        self.logout = wx.Button(self.panel,label="退出")
+        self.upload = wx.Button(self.panel,label="上传文件")
+        self.download = wx.Button(self.panel,label="下载文件")
+        self.username = wx.StaticText(self.panel,label="登录用户：")
+        self.passwd = wx.StaticText(self.panel,style=wx.ALIGN_CENTER,label="登录密码：")
+        self.uploadpath = wx.StaticText(self.panel,label="上传路径",style=wx.ALIGN_CENTER|wx.ST_NO_AUTORESIZE)
+        self.savepath = wx.StaticText(self.panel,label="存放路径",style=wx.ALIGN_CENTER)
+        self.usercontent = wx.TextCtrl(self.panel)
+        self.passwdcontent = wx.TextCtrl(self.panel,style=wx.TE_PASSWORD)
+        self.uploadfile = wx.TextCtrl(self.panel)
+        self.downloadfile = wx.TextCtrl(self.panel)
+        self.uploadpathcontent = wx.TextCtrl(self.panel)
+        self.savepathcontent = wx.TextCtrl(self.panel)
+        self.BosSet()
+        self.Eventbind()
+        self.Show()
+    def BosSet(self):
+        userbox = wx.BoxSizer()
+        passwdbox = wx.BoxSizer()
+        logoutbox = wx.BoxSizer()
+        loginbox = wx.BoxSizer(wx.VERTICAL)
+        registerbox = wx.BoxSizer()
+        uploadbox = wx.BoxSizer()
+        downloadbox = wx.BoxSizer()
+        finallbox = wx.BoxSizer(wx.VERTICAL)
+        userbox.Add(self.username,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        userbox.Add(self.usercontent, proportion=3, flag=wx.EXPAND | wx.ALL, border=3)
+        passwdbox.Add(self.passwd,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        passwdbox.Add(self.passwdcontent, proportion=3, flag=wx.EXPAND | wx.ALL, border=3)
+        logoutbox.Add(self.login,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        logoutbox.Add(self.logout,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        loginbox.Add(userbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        loginbox.Add(passwdbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        loginbox.Add(logoutbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        registerbox.Add(self.register,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        registerbox.Add(loginbox,proportion=3,flag=wx.EXPAND|wx.ALL,border=3)
+        uploadbox.Add(self.upload,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        uploadbox.Add(self.uploadfile,proportion=2,flag=wx.EXPAND|wx.ALL,border=3)
+        uploadbox.Add(self.uploadpath,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        uploadbox.Add(self.uploadpathcontent,proportion=2,flag=wx.EXPAND|wx.ALL,border=3)
+        downloadbox.Add(self.download,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        downloadbox.Add(self.downloadfile,proportion=2,flag=wx.EXPAND|wx.ALL,border=3)
+        downloadbox.Add(self.savepath,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
+        downloadbox.Add(self.savepathcontent,proportion=2,flag=wx.EXPAND|wx.ALL,border=3)
+        finallbox.Add(registerbox,proportion=3,flag=wx.EXPAND|wx.ALL,border=5)
+        finallbox.Add(uploadbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=5)
+        finallbox.Add(downloadbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=5)
+        self.panel.SetSizer(finallbox)
+
+    def LoginDecorator(func):
+        def Auth(*args):
+            print userdict
+            if userdict:
+                func(*args)
+            else:
+                message = "请先登录，如果没有账号请先注册"
+                print message
+        return Auth
+
+    def UserLogin(self,event):
+        user = str(self.usercontent.GetValue())
+        passwd = str(self.passwdcontent.GetValue())
+        passwd = mkaesecret(passwd)
+        if user == "" or user.strip() == "" or passwd == "" or passwd.strip() == "":
+            self.usercontent.SetValue("请输入用户和密码")
+        else:
+            count =  UserAuth.select().where(UserAuth.username==user,UserAuth.passwd==passwd)
+            if count:
+                global userdict
+                userdict = {user:passwd}
+            else:
+                self.usercontent.SetValue("很抱歉，您输入的用户名或密码不正确")
+
+    def UserRegister(self,event):
+        user = str(self.usercontent.GetValue())
+        passwd = str(self.passwdcontent.GetValue())
+        passwd = mkaesecret(passwd)
+        print passwd
+        if user == "" or user.strip() == "" or passwd == "" or passwd.strip() == "":
+            self.usercontent.SetValue("请输入用户和密码")
+        else:
+            timenow = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
+            try:
+                UserAuth.insert(username=user,passwd=passwd,create_date=timenow).execute()
+                self.usercontent.SetValue("注册成功")
+            except Exception,e:
+                print "faile"
+                self.usercontent.SetValue(e.message)
+
+    def UserLogout(self,event):
+        global userdict
+        userdict = {}
+
+    @LoginDecorator
+    def FileUpload(self,event):
+        # if not userdict:
+        #     self.uploadfile.SetValue("请先登录，如果没有账号请先注册")
+        # else:
+        filepath = str(self.uploadfile.GetValue())
+        savepath = str(self.uploadpathcontent.GetValue())
+        if os.path.isfile(filepath):
+            filesize = os.path.getsize(filepath)
+            filename = os.path.basename(filepath)
+            self.filetrandict = {"filename":filename,"filesize":filesize,"flag":0,"savepath":savepath,"username":userdict.keys()[0]}
+            socketclient = MySocketClient()
+            socketclient.Send(json.dumps(self.filetrandict))
+            tran_judge = socketclient.Receive()
+            if tran_judge == "ok":
+                file = open(filepath,"rb")
+                while True:
+                    filecontent = file.read(1024)
+                    if filecontent:
+                        socketclient.Send(filecontent)
+                    else:
+                        break
+                file.close()
+                receive = socketclient.Receive()
+                self.uploadfile.SetValue(receive)
+
+    @LoginDecorator
+    def FileDownload(self,event):
+        # if not userdict:
+        #     self.downloadfile.SetValue("请先登录，如果没有账号请先注册")
+        # else:
+        filepath = str(self.downloadfile.GetValue())
+        savepath = str(self.savepathcontent.GetValue())
+        filename = os.path.basename(filepath)
+        downloadpath = os.path.dirname(filepath)
+        self.filetrandict = {"filename":filename,"flag":1,"filepath":downloadpath}
+        socketclient = MySocketClient()
+        socketclient.Send(json.dumps(self.filetrandict))
+        receive_message = eval(socketclient.Receive())
+        if not receive_message["error"]:
+            print "开始接收数据"
+            filesize = receive_message["filesize"]
+            if not os.path.exists(savepath):
+                os.makedirs(savepath,777)
+            os.chdir(savepath)
+            init_size = 0
+            file = open(filename,"ab")
+            start_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            while  True:
+                receive_message = socketclient.Receive()
+                file.write(receive_message)
+                if len(receive_message) < 1024:
+                    init_size += len(receive_message)
+                    break
+                else:
+                    init_size += 1024
+            file.close()
+            end_time = time.strftime("%Y-%m-%d %H:%M:%S")
+            if filesize == init_size:
+                self.downloadfile.SetValue("下载成功")
+                LogRecord.insert(username=userdict.keys()[0],tran_type="get",file_path=savepath,file_name=filename,
+                                 start_date=start_time,end_date=end_time).execute()
+            else:
+                self.downloadfile.SetValue("下载失败")
+        else:
+            self.downloadfile.SetValue(receive_message["message"])
+
+    def Eventbind(self):
+        self.login.Bind(wx.EVT_BUTTON,self.UserLogin)
+        self.logout.Bind(wx.EVT_BUTTON,self.UserLogout)
+        self.register.Bind(wx.EVT_BUTTON,self.UserRegister)
+        self.upload.Bind(wx.EVT_BUTTON,self.FileUpload)
+        self.download.Bind(wx.EVT_BUTTON,self.FileDownload)
+
+class MySocketClient:
+    def __init__(self):
+        self.init = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.conn = self.init.connect(("192.192.1.34",8822))
+    def Send(self,data):
+        self.init.send(data)
+
+    def Receive(self):
+        message = self.init.recv(1024)
+        return  message
+
+if __name__ == "__main__":
+    app = wx.App()
+    FileTran(None,title="文件传输")
+    app.MainLoop()

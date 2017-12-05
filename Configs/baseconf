@@ -1,0 +1,10 @@
+#coding:utf-8
+
+
+[test]
+host = 10.36.3.74
+user = root
+passwd = 123456
+port = 3306
+database = filetran
+charset = utf8
