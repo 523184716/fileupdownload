@@ -90,6 +90,7 @@ class FileTran(wx.Frame):
             if count:
                 global userdict
                 userdict = {user:passwd}
+                self.usercontent.SetValue("登录成功")
             else:
                 self.usercontent.SetValue("很抱歉，您输入的用户名或密码不正确")
 
@@ -112,6 +113,7 @@ class FileTran(wx.Frame):
     def UserLogout(self,event):
         global userdict
         userdict = {}
+        self.usercontent.SetValue("注销成功")
 
     @LoginDecorator
     def FileUpload(self,event):
@@ -124,6 +126,7 @@ class FileTran(wx.Frame):
             filesize = os.path.getsize(filepath)
             filename = os.path.basename(filepath)
             self.filetrandict = {"filename":filename,"filesize":filesize,"flag":0,"savepath":savepath,"username":userdict.keys()[0]}
+            print self.filetrandict
             socketclient = MySocketClient()
             socketclient.Send(json.dumps(self.filetrandict))
             tran_judge = socketclient.Receive()
@@ -137,7 +140,10 @@ class FileTran(wx.Frame):
                         break
                 file.close()
                 receive = socketclient.Receive()
+                print receive
                 self.uploadfile.SetValue(receive)
+        else:
+            self.uploadfile.SetValue("文件或者路径不存在，请确认")
 
     @LoginDecorator
     def FileDownload(self,event):
@@ -151,7 +157,8 @@ class FileTran(wx.Frame):
         self.filetrandict = {"filename":filename,"flag":1,"filepath":downloadpath}
         socketclient = MySocketClient()
         socketclient.Send(json.dumps(self.filetrandict))
-        receive_message = eval(socketclient.Receive())
+        receive_message_init = socketclient.Receive()
+        receive_message = eval(receive_message_init)
         if not receive_message["error"]:
             print "开始接收数据"
             filesize = receive_message["filesize"]
@@ -178,7 +185,7 @@ class FileTran(wx.Frame):
             else:
                 self.downloadfile.SetValue("下载失败")
         else:
-            self.downloadfile.SetValue(receive_message["message"])
+            self.downloadfile.SetValue(json.loads(receive_message_init)["message"])
 
     def Eventbind(self):
         self.login.Bind(wx.EVT_BUTTON,self.UserLogin)
