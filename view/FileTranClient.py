@@ -33,9 +33,11 @@ class FileTran(wx.Frame):
         self.downloadfile = wx.TextCtrl(self.panel)
         self.uploadpathcontent = wx.TextCtrl(self.panel)
         self.savepathcontent = wx.TextCtrl(self.panel)
+        self.title = ""
+        self.content = ""
         self.BosSet()
         self.Eventbind()
-        self.Show()
+        #self.Show()
     def BosSet(self):
         userbox = wx.BoxSizer()
         passwdbox = wx.BoxSizer()
@@ -68,6 +70,8 @@ class FileTran(wx.Frame):
         finallbox.Add(uploadbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=5)
         finallbox.Add(downloadbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=5)
         self.panel.SetSizer(finallbox)
+    def window_dispaly(self):
+        self.Show()
 
     def LoginDecorator(func):
         def Auth(*args):
@@ -76,7 +80,7 @@ class FileTran(wx.Frame):
                 func(*args)
             else:
                 message = "请先登录，如果没有账号请先注册"
-                print message
+                FileTran(None, title="文件传输").OnAbout("event","login",message)
         return Auth
 
     def UserLogin(self,event):
@@ -84,36 +88,40 @@ class FileTran(wx.Frame):
         passwd = str(self.passwdcontent.GetValue())
         passwd = mkaesecret(passwd)
         if user == "" or user.strip() == "" or passwd == "" or passwd.strip() == "":
-            self.usercontent.SetValue("请输入用户和密码")
+            self.OnAbout(event, "login", "请输入用户和密码")
         else:
             count =  UserAuth.select().where(UserAuth.username==user,UserAuth.passwd==passwd)
             if count:
                 global userdict
                 userdict = {user:passwd}
-                self.usercontent.SetValue("登录成功")
+                self.OnAbout(event, "login", "登录成功")
             else:
-                self.usercontent.SetValue("很抱歉，您输入的用户名或密码不正确")
+                self.OnAbout(event, "login", "很抱歉，您输入的用户名或密码不正确")
 
     def UserRegister(self,event):
         user = str(self.usercontent.GetValue())
         passwd = str(self.passwdcontent.GetValue())
-        passwd = mkaesecret(passwd)
         print passwd
         if user == "" or user.strip() == "" or passwd == "" or passwd.strip() == "":
-            self.usercontent.SetValue("请输入用户和密码")
+            self.OnAbout(event, "注册", "请输入用户和密码")
         else:
-            timenow = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
-            try:
-                UserAuth.insert(username=user,passwd=passwd,create_date=timenow).execute()
-                self.usercontent.SetValue("注册成功")
-            except Exception,e:
-                print "faile"
-                self.usercontent.SetValue(e.message)
+            passwd = mkaesecret(passwd)
+            count = UserAuth.select().where(UserAuth.username==user)
+            if not count:
+                timenow = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
+                try:
+                    UserAuth.insert(username=user,passwd=passwd,create_date=timenow).execute()
+                    self.OnAbout(event, "注册", "注册成功")
+                except Exception,e:
+                    #self.usercontent.SetValue(e.message)
+                    self.OnAbout(event, "注册", e.message)
+            else:
+                self.OnAbout(event,"注册","抱歉!您输入的用户名已存在")
 
     def UserLogout(self,event):
         global userdict
         userdict = {}
-        self.usercontent.SetValue("注销成功")
+        self.OnAbout(event, "注销", "注销成功")
 
     @LoginDecorator
     def FileUpload(self,event):
@@ -140,10 +148,9 @@ class FileTran(wx.Frame):
                         break
                 file.close()
                 receive = socketclient.Receive()
-                print receive
-                self.uploadfile.SetValue(receive)
+                self.OnAbout(event,"上传文件",receive)
         else:
-            self.uploadfile.SetValue("文件或者路径不存在，请确认")
+            self.OnAbout(event,"上传文件","文件或者路径不存在，请确认")
 
     @LoginDecorator
     def FileDownload(self,event):
@@ -179,13 +186,22 @@ class FileTran(wx.Frame):
             file.close()
             end_time = time.strftime("%Y-%m-%d %H:%M:%S")
             if filesize == init_size:
-                self.downloadfile.SetValue("下载成功")
+                self.OnAbout(event, "下载", "下载成功")
                 LogRecord.insert(username=userdict.keys()[0],tran_type="get",file_path=savepath,file_name=filename,
                                  start_date=start_time,end_date=end_time).execute()
             else:
-                self.downloadfile.SetValue("下载失败")
+                self.OnAbout(event,"下载","下载失败")
         else:
-            self.downloadfile.SetValue(json.loads(receive_message_init)["message"])
+            self.title = "下载"
+            self.content = json.loads(receive_message_init)["message"]
+            self.OnAbout(event,self.title,self.content)
+
+    def OnAbout(self, event,title,content):
+        # 创建一个带"OK"按钮的对话框。wx.OK是wxWidgets提供的标准ID
+        dlg = wx.MessageDialog(self, "{}".format(content), \
+                               "{}".format(title), wx.OK)  # 语法是(self, 内容, 标题, ID)
+        dlg.ShowModal()  # 显示对话框
+        dlg.Destroy()  # 当结束之后关闭对话框
 
     def Eventbind(self):
         self.login.Bind(wx.EVT_BUTTON,self.UserLogin)
@@ -207,5 +223,6 @@ class MySocketClient:
 
 if __name__ == "__main__":
     app = wx.App()
-    FileTran(None,title="文件传输")
+    FileTran(None,title="文件传输").window_dispaly()
+
     app.MainLoop()
