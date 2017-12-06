@@ -15,6 +15,15 @@ sys.setdefaultencoding('utf-8')
 userdict = {}
 class FileTran(wx.Frame):
     def __init__(self,*args,**kwargs):
+        """
+        super:继承父类的init方法，传入Frame必须要的参数
+        定义一些按钮或者文本框的变量，方便调用
+        self.panel:创建幕布，继承self,也就是Frame框架
+        self.title、self.content 定义弹框需要的变量
+        self.BosSet()、self.Eventbind()构造函数调用的时候就直接初始化这些函数
+        :param args:
+        :param kwargs:
+        """
         super(FileTran,self).__init__(*args,**kwargs)
         self.panel = wx.Panel(self)
         self.filetrandict = {}
@@ -39,6 +48,12 @@ class FileTran(wx.Frame):
         self.Eventbind()
         #self.Show()
     def BosSet(self):
+        """
+        规划这个界面布局，定义好相应的尺寸器
+        往每个尺寸器里面添加对应的按钮或者文本框，并设置相应的样式，比如比例
+        self.panel.SetSizer(finallbox) 设置主尺寸器
+        :return:
+        """
         userbox = wx.BoxSizer()
         passwdbox = wx.BoxSizer()
         logoutbox = wx.BoxSizer()
@@ -71,9 +86,17 @@ class FileTran(wx.Frame):
         finallbox.Add(downloadbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=5)
         self.panel.SetSizer(finallbox)
     def window_dispaly(self):
+        """
+        窗口展示
+        :return:
+        """
         self.Show()
 
     def LoginDecorator(func):
+        """
+        装饰器，每次操作之前调用这个以确保登录之后才能继续其他操作
+        :return:
+        """
         def Auth(*args):
             print userdict
             if userdict:
@@ -214,6 +237,7 @@ class MySocketClient:
     def __init__(self):
         self.init = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.conn = self.init.connect(("192.192.1.34",8822))
+
     def Send(self,data):
         self.init.send(data)
 
@@ -224,5 +248,4 @@ class MySocketClient:
 if __name__ == "__main__":
     app = wx.App()
     FileTran(None,title="文件传输").window_dispaly()
-
     app.MainLoop()

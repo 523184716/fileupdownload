@@ -45,6 +45,10 @@ conn = MySQLDatabase(
     charset = config.get("test","charset")
 )
 class UserAuth(Model):
+    """
+    这种模型类名就是要创建的表名，
+    database = conn  这个就是连接目标数据库，其他都是定义的字段
+    """
     id = PrimaryKeyField()
     username = CharField(max_length=30)
     passwd = CharField(max_length=50)
