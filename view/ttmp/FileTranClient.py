@@ -13,12 +13,12 @@ import  sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 userdict = {}
+
 wildcard = u"Python 文件 (*.py)|*.py|" \
            u"编译的 Python 文件 (*.pyc)|*.pyc|" \
            u" 垃圾邮件文件 (*.spam)|*.spam|" \
            "Egg file (*.egg)|*.egg|" \
            "All files (*.*)|*.*"
-
 class FileTran(wx.Frame):
     def __init__(self,):
         """
@@ -30,7 +30,7 @@ class FileTran(wx.Frame):
         :param args:
         :param kwargs:
         """
-        super(FileTran,self).__init__(None,title="文件传输",size=(500,300))
+        super(FileTran,self).__init__(None,title="文件传输")
         self.panel = wx.Panel(self)
         self.filetrandict = {}
         self.register = wx.Button(self.panel,label="注册")
@@ -39,10 +39,10 @@ class FileTran(wx.Frame):
         self.selectfile = wx.Button(self.panel,label="选择文件")
         self.upload = wx.Button(self.panel,label="上传")
         self.download = wx.Button(self.panel,label="下载文件")
-        self.username = wx.StaticText(self.panel,-1,label="登录用户：")
+        self.username = wx.StaticText(self.panel,label="登录用户：")
         self.passwd = wx.StaticText(self.panel,style=wx.ALIGN_CENTER,label="登录密码：")
-        self.uploadpath = wx.StaticText(self.panel,label="上传路径：",style=wx.ALIGN_CENTER|wx.ST_NO_AUTORESIZE)
-        self.savepath = wx.StaticText(self.panel,label="存放路径：",style=wx.ALIGN_CENTER)
+        self.uploadpath = wx.StaticText(self.panel,label="上传路径",style=wx.ALIGN_CENTER|wx.ST_NO_AUTORESIZE)
+        self.savepath = wx.StaticText(self.panel,label="存放路径",style=wx.ALIGN_CENTER)
         self.usercontent = wx.TextCtrl(self.panel)
         self.passwdcontent = wx.TextCtrl(self.panel,style=wx.TE_PASSWORD)
         self.uploadfile = wx.TextCtrl(self.panel)
@@ -54,7 +54,6 @@ class FileTran(wx.Frame):
         self.BosSet()
         self.Eventbind()
         #self.Show()
-
     def BosSet(self):
         """
         规划这个界面布局，定义好相应的尺寸器
@@ -70,9 +69,9 @@ class FileTran(wx.Frame):
         uploadbox = wx.BoxSizer()
         downloadbox = wx.BoxSizer()
         finallbox = wx.BoxSizer(wx.VERTICAL)
-        userbox.Add(self.username,0, wx.ALL|wx.ALIGN_CENTRE,border=3)
+        userbox.Add(self.username,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
         userbox.Add(self.usercontent, proportion=3, flag=wx.EXPAND | wx.ALL, border=3)
-        passwdbox.Add(self.passwd,0, wx.ALL|wx.ALIGN_CENTRE,border=3)
+        passwdbox.Add(self.passwd,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
         passwdbox.Add(self.passwdcontent, proportion=3, flag=wx.EXPAND | wx.ALL, border=3)
         logoutbox.Add(self.login,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
         logoutbox.Add(self.logout,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
@@ -84,17 +83,16 @@ class FileTran(wx.Frame):
         uploadbox.Add(self.selectfile,proportion=1, flag=wx.EXPAND | wx.ALL, border=3)
         uploadbox.Add(self.uploadfile,proportion=2,flag=wx.EXPAND|wx.ALL,border=3)
         uploadbox.Add(self.upload, proportion=1, flag=wx.EXPAND | wx.ALL, border=3)
-        uploadbox.Add(self.uploadpath,0, wx.ALL|wx.ALIGN_CENTRE,border=3)
+        uploadbox.Add(self.uploadpath,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
         uploadbox.Add(self.uploadpathcontent,proportion=2,flag=wx.EXPAND|wx.ALL,border=3)
         downloadbox.Add(self.download,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
         downloadbox.Add(self.downloadfile,proportion=2,flag=wx.EXPAND|wx.ALL,border=3)
-        downloadbox.Add(self.savepath,0, wx.ALL|wx.ALIGN_CENTRE,border=3)
+        downloadbox.Add(self.savepath,proportion=1,flag=wx.EXPAND|wx.ALL,border=3)
         downloadbox.Add(self.savepathcontent,proportion=2,flag=wx.EXPAND|wx.ALL,border=3)
         finallbox.Add(registerbox,proportion=3,flag=wx.EXPAND|wx.ALL,border=5)
         finallbox.Add(uploadbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=5)
         finallbox.Add(downloadbox,proportion=1,flag=wx.EXPAND|wx.ALL,border=5)
         self.panel.SetSizer(finallbox)
-
     def window_dispaly(self):
         """
         窗口展示
@@ -182,8 +180,6 @@ class FileTran(wx.Frame):
                 file.close()
                 receive = socketclient.Receive()
                 self.OnAbout(event,"上传文件",receive)
-            else:
-                self.OnAbout(event,"上传文件",tran_judge)
         else:
             self.OnAbout(event,"上传文件","文件或者路径不存在，请确认")
 
@@ -244,44 +240,28 @@ class FileTran(wx.Frame):
         fileDialog = wx.FileDialog(self, message="选择单个文件", wildcard=filesFilter, style=wx.FD_OPEN)
         dialogResult = fileDialog.ShowModal()
         if dialogResult != wx.ID_OK:
+            print "22222"
             return
+        print "1111"
         path = fileDialog.GetPath()
         self.uploadfile.SetLabel(path)
 
-    def __BuildMenus(self):
-        mainMenuBar = wx.MenuBar()
-        fileMenu = wx.Menu()
-        fileMenuItem = fileMenu.Append(0, "打开单个文件")
-        self.Bind(wx.EVT_MENU, self.OnOpen, fileMenuItem)
-        # saveMenuItem = fileMenu.Append(-1, "保存文件")
-        # self.Bind(wx.EVT_MENU, self.__SaveFile, saveMenuItem)
-        # savePromptMenuItem = fileMenu.Append(-1, "保存文件及提示覆盖")
-        # self.Bind(wx.EVT_MENU, self.__SavePromptFile, savePromptMenuItem)
-        # multipleOpenMenuItem = fileMenu.Append(-1, "多文件选择")
-        # self.Bind(wx.EVT_MENU, self.__MultipleSelectFiles, multipleOpenMenuItem)
-        mainMenuBar.Append(fileMenu, title=u'&文件')
-        self.SetMenuBar(mainMenuBar)
-
     def OnButton1(self, event):
-        """
-        利用wx.FileDialog创建一个文件选择框，获取选择文件的路径以及可选文件类型
-        如果有选择文件的话dlg.ShowModal()  == wx.ID_OK，如果没有选择文件就是不等于
-        :param event:
-        :return:
-        """
+        """"""
         dlg = wx.FileDialog(self, message=u"选择文件",
                             defaultDir=os.getcwd(),
                             defaultFile="",
                             wildcard=wildcard,
                             style=wx.FD_OPEN)
+
         if dlg.ShowModal() == wx.ID_OK:
             paths = dlg.GetPaths()  # 返回一个list，如[u'E:\\test_python\\Demo\\ColourDialog.py', u'E:\\test_python\\Demo\\DirDialog.py']
             print paths[0]
             self.uploadfile.SetValue(paths[0])
             for path in paths:
                 print path  # E:\test_python\Demo\ColourDialog.py E:\test_python\Demo\DirDialog.py
-        dlg.Destroy()
 
+        dlg.Destroy()
     def Eventbind(self):
         self.login.Bind(wx.EVT_BUTTON,self.UserLogin)
         self.logout.Bind(wx.EVT_BUTTON,self.UserLogout)
