@@ -249,6 +249,11 @@ class FileTran(wx.Frame):
         self.uploadfile.SetLabel(path)
 
     def __BuildMenus(self):
+        """
+        wx.MenuBar，在你的框架的顶部放一个菜单栏
+        wx.Statusbar，在你的框架底部设置一个区域，来显示状态信息等等
+        :return:
+        """
         mainMenuBar = wx.MenuBar()
         fileMenu = wx.Menu()
         fileMenuItem = fileMenu.Append(0, "打开单个文件")

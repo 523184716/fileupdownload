@@ -6,44 +6,41 @@ from peewee import *
 import  peewee
 import  system_classify
 import  ConfigParser
+
 config = ConfigParser.ConfigParser()
-sys_result = system_classify.system_classfy()
-if sys_result == "window":
-    configfile = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+"\\Configs\\baseconf"
-else:
-    configfile = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+"/Configs/baseconf"
+configfile = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+os.sep+"Configs"+os.sep+"Baseconfig.conf"
 config.read(configfile)
 
-# class Mydata:
-#     def __init__(self,host,user,passwd,port,databases,charset):
-#         self.host = host
-#         self.user = user
-#         self.passed = passwd
-#         self.port = port
-#         self.database = databases
-#         self.charset = charset
-#
-#     def mysqlconn(self):
-#         self.conn = MySQLDatabase(
-#             host = self.host,
-#             user = self.user,
-#             passwd = self.passed,
-#             port = self.port,
-#             database = self.database,
-#             charset = self.charset
-#         )
-#         return self.conn
-# conn = Mydata(config.get("test","host"),config.get("test","user"),config.get("test","passwd"),
-#               config.get("test","port"),config.get("test","database"),config.get("test","charset")).mysqlconn()
+class MysqlConn:
+    def __init__(self,host,user,passwd,port,database,charset):
+        self.__host = host
+        self.__user = user
+        self.__passwd = passwd
+        self.__port = port
+        self.__database = database
+        self.__charset = charset
 
-conn = MySQLDatabase(
-    host = config.get("test","host"),
-    user = config.get("test","user"),
-    passwd = config.get("test","passwd"),
-    port = int(config.get("test","port")),
-    database = config.get("test","database"),
-    charset = config.get("test","charset")
-)
+    def initconn(self):
+        conn = peewee.MySQLDatabase(
+            host = self.__host,
+            user =  self.__user,
+            passwd = self.__passwd,
+            port = self.__port,
+            database = self.__database,
+            charset = self.__charset
+        )
+        return  conn
+mysqlinit = MysqlConn(config.get("test","host"),config.get("test","user"),config.get("test","passwd"),
+            int(config.get("test","port")),config.get("test","database"),config.get("test","charset")).initconn()
+
+# conn = MySQLDatabase(
+#     host = config.get("test","host"),
+#     user = config.get("test","user"),
+#     passwd = config.get("test","passwd"),
+#     port = int(config.get("test","port")),
+#     database = config.get("test","database"),
+#     charset = config.get("test","charset")
+# )
 class UserAuth(Model):
     """
     这种模型类名就是要创建的表名，
@@ -54,7 +51,7 @@ class UserAuth(Model):
     passwd = CharField(max_length=50)
     create_date = DateTimeField()
     class Meta:
-        database = conn
+        database = mysqlinit
 
 
 class LogRecord(Model):
@@ -67,7 +64,7 @@ class LogRecord(Model):
     start_date = DateTimeField()
     end_date = DateTimeField()
     class Meta:
-        database = conn
+        database = mysqlinit
 
 if __name__ == "__main__":
     UserAuth.create_table()
